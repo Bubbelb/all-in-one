@@ -186,20 +186,25 @@ for MPOINT in ${MOUNTLIST} ; do
                     echo "Error $? creating subvolume '@' here." > ${MPOINT}/.subvols_error
                     error_stop "Creation of btrfs subvolume '${MPOINT}/@' failed."
                 fi
-                # Just doing a (thin)copy-and remove, instead of a move here. This ensures there are no subvolumes anywhere in the docker volume.
-                clog DEBUG "'${MPOIN}', copying into subvolume '@'"
-                if find ${MPOINT} -mindepth 1 -maxdepth 1 -not -name '@' -exec cp --reflink=always --target-directory ${MPOINT}/@ \{\} \; ; then
-                    clog DEBUG "'${MPOINT}' data copied to subvolume @."
+                # Fist check if we need to do anything (e.g. if we are not a new volume).
+                if [[ $(ls -1A "${MPOINT}" | wc -l) -eq 0 ]] ; then
+                    clog INFO "'${MPOINT}' is a new volume. No moving of data needed."
                 else
-                    echo "Error $? copying data into subvolume '@' here." > ${MPOINT}/.subvols_error
-                    error_stop "Copying data to subvolume '${MPOINT}/@' failed."
-                fi
-                clog DEBUG "'${MPOIN}', removing old data."
-                if find ${MPOINT} -mindepth 1 -maxdepth 1 -not -name '@' -exec rm -rf \{\} \; ; then
-                    clog DEBUG "'${MPOINT}' old data removed."
-                else
-                    echo "Error $? removing old data from here. Copying finished okay" > ${MPOINT}/.subvols_error
-                    error_stop "Removing old data from volume root '${MPOINT}' failed."
+                    # Just doing a (thin)copy-and remove, instead of a move here. This ensures there are no subvolumes anywhere in the docker volume.
+                    clog DEBUG "'${MPOINT}', copying into subvolume '@'"
+                    if find ${MPOINT} -mindepth 1 -maxdepth 1 -not -name '@' -exec cp --reflink=always --target-directory ${MPOINT}/@ \{\} \; ; then
+                        clog DEBUG "'${MPOINT}' data copied to subvolume @."
+                    else
+                        echo "Error $? copying data into subvolume '@' here." > ${MPOINT}/.subvols_error
+                        error_stop "Copying data to subvolume '${MPOINT}/@' failed."
+                    fi
+                    clog DEBUG "'${MPOINT}', removing old data."
+                    if find ${MPOINT} -mindepth 1 -maxdepth 1 -not -name '@' -exec rm -rf \{\} \; ; then
+                        clog DEBUG "'${MPOINT}' old data removed."
+                    else
+                        echo "Error $? removing old data from here. Copying finished okay" > ${MPOINT}/.subvols_error
+                        error_stop "Removing old data from volume root '${MPOINT}' failed."
+                    fi
                 fi
                 if btrfs subvolume create ${MPOINT}/@snapshots ;  then
                     clog DEBUG "'${MPOINT}/@snapshots' subvolume created."
@@ -219,12 +224,17 @@ for MPOINT in ${MOUNTLIST} ; do
                     echo "Error $? creating directory '@' here." > ${MPOINT}/.subvols_error
                     error_stop "Creation of directory '${MPOINT}/@' failed."
                 fi
-                clog DEBUG "'${MPOIN}', moving into directory '@'"
-                if find ${MPOINT} -mindepth 1 -maxdepth 1 -not -name '@' -exec mv --target-directory ${MPOINT}/@ \{\} \; ; then
-                    clog DEBUG "'${MPOINT}' data moved to directory @."
+                # Fist check if we need to do anything (e.g. if we are not a new volume).
+                if [[ $(ls -1A "${MPOINT}" | wc -l) -eq 0 ]] ; then
+                    clog INFO "'${MPOINT}' is a new volume. No moving of data needed."
                 else
-                    echo "Error $? moving data into directory '@' here." > ${MPOINT}/.subvols_error
-                    error_stop "Moving data to directory '${MPOINT}/@' failed."
+                    clog DEBUG "'${MPOINT}', moving into directory '@'"
+                    if find ${MPOINT} -mindepth 1 -maxdepth 1 -not -name '@' -exec mv --target-directory ${MPOINT}/@ \{\} \; ; then
+                        clog DEBUG "'${MPOINT}' data moved to directory @."
+                    else
+                        echo "Error $? moving data into directory '@' here." > ${MPOINT}/.subvols_error
+                        error_stop "Moving data to directory '${MPOINT}/@' failed."
+                    fi
                 fi
                 clog DEBUG "'${MPOINT}, Writing '.subvols' to indicate all went well."
                 touch ${MPOINT}/.subvols
