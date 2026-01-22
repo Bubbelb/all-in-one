@@ -150,7 +150,7 @@ function error_stop() {
 
 # Fist off: check if all mountpoint (e.g. docker volumes) are mounted directly under /mnt
 for MPOINT in ${MOUNTLIST} ; do
-    if echo "${MPOINT}" | grep -qE '^/mnt/[^/]+$' ; then
+    if echo "${MPOINT}" | grep -qE '^/mnt/[^/]+/.*$' ; then
         error_stop "There are mounts deeper than first level under /mnt. Mountpoint: ${MPOINT}"
     fi
 done
