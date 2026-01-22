@@ -176,7 +176,7 @@ for MPOINT in ${MOUNTLIST} ; do
     ALL_MOUNTS=$((ALL_MOUNTS+1))
     if ! [[ -f "${MPOINT}/.subvols" ]] ; then
         clog INFO "Processing volume '${MPOINT}' for conversion."
-        case $(grep -E '^\S+\s+'${MPOINT}'\s+' /etc/mtab | awk '{print $3}') ; in
+        case $(grep -E '^\S+\s+'${MPOINT}'\s+' /etc/mtab | awk '{print $3}') in
             btrfs )
                 # Here BTRFS Conversion takes place
                 clog DEBUG "'${MPOINT}' is on an btrfs subvolume."
